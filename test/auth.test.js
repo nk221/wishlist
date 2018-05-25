@@ -1,27 +1,25 @@
+"use strict";
 /* global describe it before after */
 process.env.NODE_ENV = "test";
 
+const MongoClient = require("mongodb").MongoClient;
 const chai = require("chai");
 const should = chai.should();
-let chaiHttp = require("chai-http");
-let server = require("../app");
+const chaiHttp = require("chai-http");
+const server = require("../app");
+const config = require("../config");
+const test_user = { username: "John", password: "pass", email: "john@smith.com" };
+let db;
 let cookie = "";
 
-const mongoose = require("mongoose");
-const config = require("../config");
-const User = require("../auth/models/user");
-
-let test_user = { username: "John", password: "pass", email: "john@smith.com" };
 chai.use(chaiHttp);
 
 function removeUser(done) {
-  User.findOne({ username: test_user.username }, function(err, user) {
+  db.collection("users").deleteMany({ username: test_user.username }, {}, function(err, result) {
     should.not.exist(err);
-    if (user) {
-      User.remove(user, function() {
-        done();
-      });
-    } else done();
+    should.exist(result);
+    result.should.have.property("deletedCount");
+    done();
   });
 }
 
@@ -75,13 +73,32 @@ function userShouldExists(done) {
     });
 }
 
+function logout(done) {
+  chai
+    .request(server)
+    .get("/logout")
+    .set("Cookie", cookie)
+    .end((err, res) => {
+      should.not.exist(err);
+      res.should.have.status(200);
+      should.exist(res.body);
+      res.body.should.have.property("result").eql("success");
+      done();
+    });
+}
+
 describe("Authentication tests", function() {
   before(function(done) {
-    mongoose.connect(config.mongo.url, done);
+    MongoClient.connect(config.mongo.url, function(err, _db) {
+      should.not.exist(err);
+      should.exist(_db);
+      db = _db;
+      done();
+    });
   });
 
   after(function(done) {
-    mongoose.connection.close();
+    db.close();
     done();
   });
 
@@ -113,6 +130,7 @@ describe("Authentication tests", function() {
         user.should.have.property("username").eql(test_user.username);
         user.should.have.property("email").eql(test_user.email);
         cookie = res.header["set-cookie"].join(";");
+        //console.log(cookie);
         done();
       });
   });
@@ -120,7 +138,7 @@ describe("Authentication tests", function() {
   it("Check user is logged in", userShouldExists);
 
   it("Check test user in db", function(done) {
-    User.findOne({ username: test_user.username }, function(err, user) {
+    db.collection("users").findOne({ username: test_user.username }, {}, function(err, user) {
       should.not.exist(err);
       should.exist(user);
       user.should.have.property("username").eql(test_user.username);
@@ -129,19 +147,7 @@ describe("Authentication tests", function() {
     });
   });
 
-  it("Logout", function(done) {
-    chai
-      .request(server)
-      .get("/logout")
-      .set("Cookie", cookie)
-      .end((err, res) => {
-        should.not.exist(err);
-        res.should.have.status(200);
-        should.exist(res.body);
-        res.body.should.have.property("result").eql("success");
-        done();
-      });
-  });
+  it("Logout", logout);
 
   it("Check user is not logged in", function(done) {
     chai
@@ -184,5 +190,21 @@ describe("Authentication tests", function() {
 
   it("Check user is logged in", userShouldExists);
 
+  it("Logout", logout);
+
   it("Remove test user", removeUser);
+
+  it("Remove session", function(done) {
+    should.exist(cookie);
+    cookie.should.not.be.eql("");
+    let sid = /connect.sid=s%3A([^\.]+)\./g.exec(cookie)[1];
+    should.exist(sid);
+
+    db.collection("sessions").deleteMany({ _id: sid }, function(err, result) {
+      should.not.exist(err);
+      should.exist(result);
+      result.should.have.property("deletedCount").eql(1);
+      done();
+    });
+  });
 });

@@ -14,7 +14,7 @@
     "eslint": "^4.19.1",
     "mocha": "^5.2.0",
     "nodemon": "^1.17.2",
-    "should": "~2.1.0"
+    "mongodb": "^2.2.33"
   },
   "dependencies": {
     "connect-mongo": "^2.0.1",
