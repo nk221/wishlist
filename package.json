@@ -13,8 +13,8 @@
     "chai-http": "^4.0.0",
     "eslint": "^4.19.1",
     "mocha": "^5.2.0",
-    "nodemon": "^1.17.2",
-    "mongodb": "^2.2.33"
+    "mongodb": "^3.0.8",
+    "nodemon": "^1.17.2"
   },
   "dependencies": {
     "connect-mongo": "^2.0.1",

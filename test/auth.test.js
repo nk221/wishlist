@@ -10,6 +10,7 @@ const server = require("../app");
 const config = require("../config");
 const test_user = { username: "John", password: "pass", email: "john@smith.com" };
 let db;
+let client;
 let cookie = "";
 
 chai.use(chaiHttp);
@@ -89,16 +90,17 @@ function logout(done) {
 
 describe("Authentication tests", function() {
   before(function(done) {
-    MongoClient.connect(config.mongo.url, function(err, _db) {
+    MongoClient.connect(config.mongo.url, function(err, _client) {
       should.not.exist(err);
-      should.exist(_db);
-      db = _db;
+      should.exist(_client);
+      client = _client;
+      db = client.db();
       done();
     });
   });
 
   after(function(done) {
-    db.close();
+    client.close();
     done();
   });
 
@@ -130,7 +132,6 @@ describe("Authentication tests", function() {
         user.should.have.property("username").eql(test_user.username);
         user.should.have.property("email").eql(test_user.email);
         cookie = res.header["set-cookie"].join(";");
-        //console.log(cookie);
         done();
       });
   });
