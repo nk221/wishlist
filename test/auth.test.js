@@ -1,11 +1,11 @@
 /* global describe it before after */
-//const should = require("should");
 process.env.NODE_ENV = "test";
 
 const chai = require("chai");
 const should = chai.should();
 let chaiHttp = require("chai-http");
 let server = require("../app");
+let cookie = "";
 
 const mongoose = require("mongoose");
 const config = require("../config");
@@ -29,6 +29,7 @@ function registerShouldFail(user, done) {
   chai
     .request(server)
     .post("/register")
+    .set("Cookie", cookie)
     .send(user)
     .end((err, res) => {
       should.not.exist(err);
@@ -45,6 +46,7 @@ function loginShouldFail(user, done) {
   chai
     .request(server)
     .post("/login")
+    .set("Cookie", cookie)
     .send(user)
     .end((err, res) => {
       should.not.exist(err);
@@ -53,6 +55,22 @@ function loginShouldFail(user, done) {
       res.body.should.have.property("error");
       res.body.error.should.have.property("status").eql(400);
       res.body.error.should.have.property("message").not.eql("");
+      done();
+    });
+}
+
+function userShouldExists(done) {
+  chai
+    .request(server)
+    .get("/user")
+    .set("Cookie", cookie)
+    .end((err, res) => {
+      should.not.exist(err);
+      res.should.have.status(200);
+      let user = res.body;
+      should.exist(user);
+      user.should.have.property("username").eql(test_user.username);
+      user.should.have.property("email").eql(test_user.email);
       done();
     });
 }
@@ -85,6 +103,73 @@ describe("Authentication tests", function() {
     chai
       .request(server)
       .post("/register")
+      .set("Cookie", cookie)
+      .send(test_user)
+      .end((err, res) => {
+        should.not.exist(err);
+        res.should.have.status(200);
+        let user = res.body;
+        should.exist(user);
+        user.should.have.property("username").eql(test_user.username);
+        user.should.have.property("email").eql(test_user.email);
+        cookie = res.header["set-cookie"].join(";");
+        done();
+      });
+  });
+
+  it("Check user is logged in", userShouldExists);
+
+  it("Check test user in db", function(done) {
+    User.findOne({ username: test_user.username }, function(err, user) {
+      should.not.exist(err);
+      should.exist(user);
+      user.should.have.property("username").eql(test_user.username);
+      user.should.have.property("email").eql(test_user.email);
+      done();
+    });
+  });
+
+  it("Logout", function(done) {
+    chai
+      .request(server)
+      .get("/logout")
+      .set("Cookie", cookie)
+      .end((err, res) => {
+        should.not.exist(err);
+        res.should.have.status(200);
+        should.exist(res.body);
+        res.body.should.have.property("result").eql("success");
+        done();
+      });
+  });
+
+  it("Check user is not logged in", function(done) {
+    chai
+      .request(server)
+      .get("/user")
+      .set("Cookie", cookie)
+      .end((err, res) => {
+        should.not.exist(err);
+        res.should.have.status(200);
+        should.exist(res.body);
+        res.body.should.eql({});
+        done();
+      });
+  });
+
+  it("Login with invalid username", function(done) {
+    loginShouldFail({ ...test_user, username: "0" }, done);
+  });
+
+  it("Login with invalid password", function(done) {
+    loginShouldFail({ ...test_user, password: "0" }, done);
+  });
+
+  it("Login with valid credentials", function(done) {
+    chai
+      .request(server)
+      .post("/login")
+      .set("Cookie", cookie)
       .send(test_user)
       .end((err, res) => {
         should.not.exist(err);
@@ -97,23 +182,7 @@ describe("Authentication tests", function() {
       });
   });
 
-  it("Check test user in db", function(done) {
-    User.findOne({ username: test_user.username }, function(err, user) {
-      should.not.exist(err);
-      should.exist(user);
-      user.should.have.property("username").eql(test_user.username);
-      user.should.have.property("email").eql(test_user.email);
-      done();
-    });
-  });
-
-  it("Login with invalid username", function(done) {
-    loginShouldFail({ ...test_user, username: "0" }, done);
-  });
-
-  it("Login with invalid password", function(done) {
-    loginShouldFail({ ...test_user, password: "0" }, done);
-  });
+  it("Check user is logged in", userShouldExists);
 
   it("Remove test user", removeUser);
 });
