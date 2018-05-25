@@ -1,0 +1,14 @@
+{
+  "remotePath": "./node",
+  "host": "cobos.ml",
+  "username": "me",
+  "password": "pfzw2inrf,fy3in",
+  "port": 802,
+  "secure": true,
+  "protocol": "ftp",
+  "uploadOnSave": false,
+  "passive": false,
+  "debug": false,
+  "privateKeyPath": null,
+  "ignore": ["\\.vscode", "\\node_modules", "\\data", "test"]
+}

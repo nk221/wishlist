@@ -1,0 +1,100 @@
+<html>
+
+<head>
+    <title>Homepage</title>
+    <style>
+        body,
+        div {
+            background: #ffffff;
+            font-family: consolas, Tahoma;
+        }
+
+        label {
+            display: inline-block;
+            text-align: right;
+            margin: 3px;
+            float: right;
+        }
+
+        input {
+            background-color: #ffffff;
+            color: #000000;
+            font-family: consolas, Tahoma;
+            display: inline-block;
+            border: 1px solid #686868;
+            margin: 3px;
+            float: right;
+        }
+
+        .button {
+            font-weight: bold;
+            border: 1px solid #686868;
+            color: #000000;
+            font-size: 14px;
+            width: 80px;
+            height: 20px;
+            text-align: center;
+            float: right;
+        }
+
+        .button:hover {
+            color: #000000;
+        }
+
+        .d {
+            width: 250px;
+        }
+
+        .c {
+            float: right;
+        }
+
+        h3 {
+            margin: 15px;
+        }
+    </style>
+    <script>
+
+        function doFunction() {
+            var xmlhttp = new XMLHttpRequest();
+            var url = "/login/";
+            xmlhttp.open("POST", url, true);
+            xmlhttp.setRequestHeader("Content-type", "application/json");
+            xmlhttp.onreadystatechange = function () { //Call a function when the state changes.
+                if (xmlhttp.readyState == 4) {
+                    if (xmlhttp.status == 200) {
+                        alert(xmlhttp.responseText);
+                    }
+                    else if (xmlhttp.status >= 400) {
+                        alert(xmlhttp.responseText);
+                    }
+                }
+            }
+
+            var parameters = {
+                "username": document.getElementById("name").value,
+                "password": document.getElementById("password").value
+            };
+
+            xmlhttp.send(JSON.stringify(parameters));
+        }
+
+    </script>
+</head>
+
+<body>
+    <h3>Login</h3>
+    <div class="d">
+        <div class="c">
+            <input type="text" name="name" id="name">
+            <label for="name">Name:</label>
+            <br/>
+            <input type="text" name="password" id="password">
+            <label for="password">Password:</label>
+            <br/>
+            <input class="button" type="submit" value="OK" onclick="doFunction()">
+        </div>
+    </div>
+</body>
+
+</html>
