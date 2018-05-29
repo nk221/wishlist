@@ -25,7 +25,7 @@ describe("WishList model tests", function() {
         user: "5b066afc8c000c1f302bceb3", //testResuls.TestUserId, //"5b066afc8c409c1f302bceb3",
         categories: [
           {
-            name: "Test List"
+            name: "Test List1"
           }
         ]
       },
