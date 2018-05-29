@@ -12,6 +12,9 @@ const test_user = { username: "John", password: "pass", email: "john@smith.com" 
 let db;
 let client;
 let cookie = "";
+const testResuls = {};
+
+module.exports = testResuls;
 
 chai.use(chaiHttp);
 
@@ -144,6 +147,7 @@ describe("Authentication tests", function() {
       should.exist(user);
       user.should.have.property("username").eql(test_user.username);
       user.should.have.property("email").eql(test_user.email);
+      testResuls.TestUserId = user._id;
       done();
     });
   });

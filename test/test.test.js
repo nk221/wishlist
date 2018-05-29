@@ -1,68 +1,38 @@
-//* global describe it before after beforeEach afterEach */
-//const should = require("should");
-/*const chai = require("chai");
-const should = chai.should();
-
+"use strict";
+/* global describe it before after */
+//http://mongoosejs.com/docs/api.html#Model
+const WishList = require("../models/wishlist");
+//const WishList = mongoose.model("WishList");
 const mongoose = require("mongoose");
 const config = require("../config");
-var User = require("../auth/models/user");
-let db;
 
-describe("User", function() {
+const chai = require("chai");
+const should = chai.should();
+const testResuls = require("./auth.test");
+
+describe("WishList model tests", function() {
   before(function(done) {
-    db = mongoose.connect(config.mongo.url, done);
+    mongoose.connect(config.mongo.url, done);
   });
 
-  after(function(done) {
-    mongoose.connection.close(done);
-    //done();
-  });
+  it("Create WishList", function(done) {
+    //let wl = new WishList();
 
-  beforeEach(function(done) {
-    var user = new User({
-      username: "John",
-      password: "pass"
-    });
+    console.log(testResuls.TestUserId);
 
-    user.save(function(error) {
-      should.not.exist(error);
-      done();
-    });
-  });
-
-  it("Some test", function(done) {
-    User.findOne({ username: "Test1" }, function(err, user) {
-      should.not.exist(err);
-      should.exist(user, "user not exists");
-      user.should.have.property("username");
-      user.should.have.property("password");
-      done();
-    });
-  });
-
-  it("Some test2", function(done) {
-    User.findOne({ username: "John" }, function(err, user) {
-      should.not.exist(err);
-      should.exist(user, "user not exists");
-      user.should.have.property("username");
-      user.should.have.property("password");
-      user.username.should.eql("John");
-      done();
-    });
-  });
-
-  afterEach(function(done) {
-    console.log("afterEach");
-    User.findOne({ username: "John" }, function(err, user) {
-      should.not.exist(err);
-      should.exist(user, "user not exists");
-      user.should.have.property("username");
-      user.username.should.eql("John");
-
-      User.remove(user, function() {
+    WishList.create(
+      {
+        user: "5b066afc8c000c1f302bceb3", //testResuls.TestUserId, //"5b066afc8c409c1f302bceb3",
+        categories: [
+          {
+            name: "Test List"
+          }
+        ]
+      },
+      function(err, wl) {
+        console.log(wl);
         done();
-      });
-    });
+      }
+    );
   });
 });
-*/
