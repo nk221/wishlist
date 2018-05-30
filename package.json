@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "dtest": "mocha --inspect-brk --timeout 15000",
-    "test": "mocha --timeout 15000 --exit",
+    "dtest": "mocha --inspect-brk --timeout 15000 ./test/run.test.js",
+    "test": "mocha --timeout 15000 --exit  ./test/run.test.js",
     "debug": "nodemon --inspect ./bin/www"
   },
   "devDependencies": {
