@@ -1,14 +1,16 @@
-var createError = require("http-errors");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
-var app = express();
-var auth = require("./auth");
-var mongoose = require("mongoose");
+const createError = require("http-errors");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
+const app = express();
+const mongoose = require("mongoose");
 const config = require("./config");
-
+const wishListRouter = require("./routes/wishlists");
+const categoriesRouter = require("./routes/categories");
+const itemsRouter = require("./routes/items");
 mongoose.connect(config.mongo.url);
+const auth = require("./auth"); //uses mongoose.connection, connect it before
 
 app.disable("etag"); //helps to prevent caching (304)
 if (process.env.NODE_ENV !== "test") app.use(logger("dev"));
@@ -16,9 +18,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+app.use(express.static(path.join(__dirname, "public")));
 app.use(auth);
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use("/wishlist", wishListRouter);
+app.use("/category", categoriesRouter);
+app.use("/item", itemsRouter);
 
 /////////////////////////////////////
 //              ERRORS             //

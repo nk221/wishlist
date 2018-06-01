@@ -62,16 +62,14 @@ describe("Authentication tests", function() {
   it("Check user is logged in", userShouldExists);
 
   it("Check test user in db", function(done) {
-    db
-      .collection("users")
-      .findOne({ username: vars.testUser.username }, {}, function(err, user) {
-        should.not.exist(err);
-        should.exist(user);
-        user.should.have.property("username").eql(vars.testUser.username);
-        user.should.have.property("email").eql(vars.testUser.email);
-        vars.testUserId = user._id;
-        done();
-      });
+    db.collection("users").findOne({ username: vars.testUser.username }, {}, function(err, user) {
+      should.not.exist(err);
+      should.exist(user);
+      user.should.have.property("username").eql(vars.testUser.username);
+      user.should.have.property("email").eql(vars.testUser.email);
+      vars.testUserId = user._id;
+      done();
+    });
   });
 
   it("Logout", logout);
@@ -123,10 +121,7 @@ describe("Authentication tests", function() {
 function removeUser(done) {
   db
     .collection("users")
-    .deleteMany({ username: vars.testUser.username }, {}, function(
-      err,
-      result
-    ) {
+    .deleteMany({ username: vars.testUser.username }, {}, function(err, result) {
       should.not.exist(err);
       should.exist(result);
       result.should.have.property("deletedCount");
