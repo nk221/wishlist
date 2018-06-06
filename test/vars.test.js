@@ -5,6 +5,86 @@ let vars = {
     password: "pass",
     email: "john@smith.com"
   },
+  testData: [
+    {
+      name: "WishList 1",
+      categories: [
+        {
+          name: "Category 1:1",
+          items: [
+            {
+              name: "Item 1:1:1",
+              quantity: "1:1:1",
+              checked: false,
+              important: false
+            },
+            {
+              name: "Item 1:1:2",
+              quantity: "1:1:2",
+              checked: false,
+              important: false
+            }
+          ]
+        },
+        {
+          name: "Category 1:2",
+          items: [
+            {
+              name: "Item 1:2:1",
+              quantity: "1:2:1",
+              checked: false,
+              important: false
+            },
+            {
+              name: "Item 1:2:2",
+              quantity: "1:2:2",
+              checked: false,
+              important: false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: "WishList 2",
+      categories: [
+        {
+          name: "Category 2:1",
+          items: [
+            {
+              name: "Item 2:1:1",
+              quantity: "2:1:1",
+              checked: false,
+              important: false
+            },
+            {
+              name: "Item 2:1:2",
+              quantity: "2:1:2",
+              checked: false,
+              important: false
+            }
+          ]
+        },
+        {
+          name: "Category 2:2",
+          items: [
+            {
+              name: "Item 2:2:1",
+              quantity: "2:2:1",
+              checked: false,
+              important: false
+            },
+            {
+              name: "Item 2:2:2",
+              quantity: "2:2:2",
+              checked: false,
+              important: false
+            }
+          ]
+        }
+      ]
+    }
+  ],
   cookie: "",
   sid: () => {
     if (!vars.cookie) return "";

@@ -7,6 +7,7 @@ const chai = require("chai");
 const should = chai.should();
 const chaiHttp = require("chai-http");
 const config = require("../config");
+var ObjectId = require("mongoose").Types.ObjectId;
 let db, client;
 chai.use(chaiHttp);
 
@@ -24,6 +25,18 @@ describe("CleanUp", function() {
   after(function(done) {
     client.close();
     done();
+  });
+
+  it("Remove test user's items", function(done) {
+    removeUserData("items", done);
+  });
+
+  it("Remove test user's categories", function(done) {
+    removeUserData("categories", done);
+  });
+
+  it.skip("Remove test user's wishlist", function(done) {
+    removeUserData("wishlists", done);
   });
 
   it("Remove test user", removeUser);
@@ -46,6 +59,20 @@ function removeUser(done) {
   db
     .collection("users")
     .deleteMany({ username: vars.testUser.username }, {}, function(
+      err,
+      result
+    ) {
+      should.not.exist(err);
+      should.exist(result);
+      result.should.have.property("deletedCount");
+      done();
+    });
+}
+
+function removeUserData(collection, done) {
+  db
+    .collection(collection)
+    .deleteMany({ user: new ObjectId(vars.testUserId) }, {}, function(
       err,
       result
     ) {

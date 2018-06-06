@@ -2,6 +2,8 @@ let utils = require("../utils");
 let categoriesController = require("../controllers/categories");
 let itemsController = require("../controllers/items");
 const WishList = require("../models/wishlist");
+const mongoose = require("mongoose");
+var ObjectId = require("mongoose").Types.ObjectId;
 require("../models/category"); // init child models used in get
 require("../models/item");
 /**
@@ -35,22 +37,39 @@ module.exports.get = async (req, res, next) => {
   }
 };
 
-/**
- * POST /wishlist/ body: {_id: null, name: "Simple wishlist"} - insert or update wishlist
- */
+// POST /wishlist/ body: {_id: null, name: "Simple wishlist"} - insert or update wishlist
 module.exports.post = async (req, res, next) => {
   try {
-    let { userId, body } = req;
-    //TODO: insert or update wishlist
-    //res.json({ _id: wishlistId });
+    let { user, body } = req;
+
+    let wishList;
+
+    if (body._id) {
+      let wls = await WishList.find({ user: user._id, _id: body._id }).exec();
+
+      if (wls.length === 0)
+        return next({
+          status: 400,
+          message: `WishList with id: ${body._id} does not exist.`
+        });
+
+      wishList = wls[0];
+      wishList.name = body.name;
+    } else {
+      wishList = new WishList({
+        _id: new ObjectId(),
+        user: user._id,
+        name: body.name
+      });
+    }
+    await wishList.save();
+    res.json(wishList);
   } catch (e) {
     return next(e);
   }
 };
 
-/**
- * DELETE wishlist/ body: {_id: null}
- */
+// DELETE wishlist/ body: {_id: null}
 module.exports.delete = async (req, res, next) => {
   try {
     let {
