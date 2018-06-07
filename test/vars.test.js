@@ -11,6 +11,7 @@ let vars = {
       categories: [
         {
           name: "Category 1:1",
+          sort: 0,
           items: [
             {
               name: "Item 1:1:1",
@@ -28,6 +29,7 @@ let vars = {
         },
         {
           name: "Category 1:2",
+          sort: 1,
           items: [
             {
               name: "Item 1:2:1",
@@ -50,6 +52,7 @@ let vars = {
       categories: [
         {
           name: "Category 2:1",
+          sort: 0,
           items: [
             {
               name: "Item 2:1:1",
@@ -67,6 +70,7 @@ let vars = {
         },
         {
           name: "Category 2:2",
+          sort: 1,
           items: [
             {
               name: "Item 2:2:1",

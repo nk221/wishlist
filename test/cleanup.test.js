@@ -13,13 +13,16 @@ chai.use(chaiHttp);
 
 describe("CleanUp", function() {
   before(function(done) {
-    MongoClient.connect(config.mongo.url, function(err, _client) {
-      should.not.exist(err);
-      should.exist(_client);
-      client = _client;
-      db = client.db();
-      done();
-    });
+    MongoClient.connect(
+      config.mongo.url,
+      function(err, _client) {
+        should.not.exist(err);
+        should.exist(_client);
+        client = _client;
+        db = client.db();
+        done();
+      }
+    );
   });
 
   after(function(done) {
@@ -27,11 +30,11 @@ describe("CleanUp", function() {
     done();
   });
 
-  it("Remove test user's items", function(done) {
+  it.skip("Remove test user's items", function(done) {
     removeUserData("items", done);
   });
 
-  it("Remove test user's categories", function(done) {
+  it.skip("Remove test user's categories", function(done) {
     removeUserData("categories", done);
   });
 
@@ -56,29 +59,25 @@ describe("CleanUp", function() {
 });
 
 function removeUser(done) {
-  db
-    .collection("users")
-    .deleteMany({ username: vars.testUser.username }, {}, function(
-      err,
-      result
-    ) {
-      should.not.exist(err);
-      should.exist(result);
-      result.should.have.property("deletedCount");
-      done();
-    });
+  db.collection("users").deleteMany({ username: vars.testUser.username }, {}, function(
+    err,
+    result
+  ) {
+    should.not.exist(err);
+    should.exist(result);
+    result.should.have.property("deletedCount");
+    done();
+  });
 }
 
 function removeUserData(collection, done) {
-  db
-    .collection(collection)
-    .deleteMany({ user: new ObjectId(vars.testUserId) }, {}, function(
-      err,
-      result
-    ) {
-      should.not.exist(err);
-      should.exist(result);
-      result.should.have.property("deletedCount");
-      done();
-    });
+  db.collection(collection).deleteMany({ user: new ObjectId(vars.testUserId) }, {}, function(
+    err,
+    result
+  ) {
+    should.not.exist(err);
+    should.exist(result);
+    result.should.have.property("deletedCount");
+    done();
+  });
 }

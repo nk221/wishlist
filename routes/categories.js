@@ -3,6 +3,6 @@ let router = express.Router();
 let categoriesController = require("../controllers/categories");
 
 router.post("/*", categoriesController.post);
-router.delete("/*", categoriesController.delete);
+router.delete("/:categoryId", categoriesController.delete);
 
 module.exports = router;

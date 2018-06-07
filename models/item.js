@@ -11,7 +11,7 @@ const ItemSchema = new Schema(
     name: {
       type: String,
       trim: true,
-      required: true
+      required: [true, "name should not be empty!"]
     },
     quantity: {
       type: String,
@@ -28,5 +28,15 @@ const ItemSchema = new Schema(
   },
   { timestamps: true }
 );
+
+ItemSchema.set("toJSON", {
+  transform: function(doc, ret) {
+    delete ret.createdAt;
+    delete ret.updatedAt;
+    delete ret.__v;
+    delete ret.user;
+    return ret;
+  }
+});
 
 module.exports = mongoose.model("item", ItemSchema);
