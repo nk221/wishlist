@@ -17,10 +17,10 @@ module.exports.get = async (req, res, next) => {
       result = (await WishList.find(conditions, "_id name")
         .populate({
           path: "categories",
-          select: "_id name",
+          select: "_id name sort",
           populate: {
             path: "items",
-            select: "_id name quantity checked important"
+            select: "_id category wishlist name quantity checked important"
           }
         })
         .exec()).map(wl => wl.toObject({ virtuals: true }));

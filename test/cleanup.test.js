@@ -12,72 +12,48 @@ let db, client;
 chai.use(chaiHttp);
 
 describe("CleanUp", function() {
-  before(function(done) {
-    MongoClient.connect(
-      config.mongo.url,
-      function(err, _client) {
-        should.not.exist(err);
-        should.exist(_client);
-        client = _client;
-        db = client.db();
-        done();
-      }
-    );
+  before(async function() {
+    client = await MongoClient.connect(config.mongo.url);
+    db = client.db();
   });
 
-  after(function(done) {
+  after(async function() {
     client.close();
-    done();
   });
 
-  it.skip("Remove test user's items", function(done) {
-    removeUserData("items", done);
+  it.skip("Remove test user's items", async function() {
+    removeUserData("items");
   });
 
-  it.skip("Remove test user's categories", function(done) {
-    removeUserData("categories", done);
+  it.skip("Remove test user's categories", async function() {
+    removeUserData("categories");
   });
 
-  it.skip("Remove test user's wishlist", function(done) {
-    removeUserData("wishlists", done);
+  it.skip("Remove test user's wishlist", async function() {
+    removeUserData("wishlists");
   });
 
   it("Remove test user", removeUser);
 
-  it("Remove session", function(done) {
+  it("Remove session", async function() {
     should.exist(vars.cookie);
     let sid = vars.sid();
     should.exist(sid);
 
-    db.collection("sessions").deleteMany({ _id: sid }, function(err, result) {
-      should.not.exist(err);
-      should.exist(result);
-      result.should.have.property("deletedCount").eql(1);
-      done();
-    });
+    let result = await db.collection("sessions").deleteMany({ _id: sid });
+    should.exist(result);
+    result.should.have.property("deletedCount").eql(1);
   });
 });
 
-function removeUser(done) {
-  db.collection("users").deleteMany({ username: vars.testUser.username }, {}, function(
-    err,
-    result
-  ) {
-    should.not.exist(err);
-    should.exist(result);
-    result.should.have.property("deletedCount");
-    done();
-  });
+async function removeUser() {
+  let result = await db.collection("users").deleteMany({ username: vars.testUser.username });
+  should.exist(result);
+  result.should.have.property("deletedCount");
 }
 
-function removeUserData(collection, done) {
-  db.collection(collection).deleteMany({ user: new ObjectId(vars.testUserId) }, {}, function(
-    err,
-    result
-  ) {
-    should.not.exist(err);
-    should.exist(result);
-    result.should.have.property("deletedCount");
-    done();
-  });
+async function removeUserData(collection) {
+  let result = await db.collection(collection).deleteMany({ user: new ObjectId(vars.testUserId) });
+  should.exist(result);
+  result.should.have.property("deletedCount");
 }

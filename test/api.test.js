@@ -1,103 +1,159 @@
 "use strict";
-/* global describe it before after */
+/* global describe it */
 process.env.NODE_ENV = "test";
 const vars = require("./vars.test");
-const MongoClient = require("mongodb").MongoClient;
 const chai = require("chai");
 const should = chai.should();
 const chaiHttp = require("chai-http");
 const server = require("../app");
-const config = require("../config");
-let db, client;
 chai.use(chaiHttp);
 
 describe("API tests", function() {
-  before(function(done) {
-    MongoClient.connect(
-      config.mongo.url,
-      function(err, _client) {
-        should.not.exist(err);
-        should.exist(_client);
-        client = _client;
-        db = client.db();
-        done();
-      }
+  it("Unauthorized should failed", async function() {
+    let res = await chai.request(server).get("/wishlist");
+    res.should.have.status(403);
+  });
+
+  it("Create Wishlists", async function() {
+    await Promise.all(vars.testData.map(wl => postWishList(wl, wishListCheckSuccess)));
+  });
+
+  it("Update Wishlist", async function() {
+    vars.testData[0].name += " (updated)";
+    await postWishList(vars.testData[0], wishListCheckSuccess);
+  });
+
+  it("Update Wishlist with wrong id", async function() {
+    await postWishList({ ...vars.testData[0], _id: "000000b72833550fb8932f16" }, checkFailed);
+  });
+
+  it("Update Wishlist with empty name", async function() {
+    await postWishList({ ...vars.testData[0], name: "" }, checkFailed);
+  });
+
+  it("Create Categories", async function() {
+    let cats = [];
+    vars.testData.forEach(wl => {
+      wl.categories.forEach(cat => {
+        cats.push(cat);
+      });
+    });
+
+    await Promise.all(cats.map(c => postCategory(c, categoryCheckSuccess)));
+  });
+
+  it("Update Category", async function() {
+    vars.testData[0].categories[0].name += " (updated)";
+    await postCategory(vars.testData[0].categories[0], categoryCheckSuccess);
+  });
+
+  it("Update Category with wrong id", async function() {
+    await postCategory(
+      { ...vars.testData[0].categories[0], _id: "000000b72833550fb8932f16" },
+      checkFailed
     );
   });
 
-  after(function(done) {
-    client.close();
-    done();
+  it("Update Category with empty name", async function() {
+    await postCategory({ ...vars.testData[0].categories[0], name: "" }, checkFailed);
   });
 
-  it("Create Wishlist 1", function(done) {
-    postWishList(vars.testData[0], done, wishListCheckSuccess);
+  it("Create Items", async function() {
+    let items = [];
+    vars.testData.forEach(wl => {
+      wl.categories.forEach(cat => {
+        cat.items.forEach(item => {
+          items.push(item);
+        });
+      });
+    });
+
+    await Promise.all(items.map(i => postItem(i, itemCheckSuccess)));
   });
 
-  it("Create Wishlist 2", function(done) {
-    postWishList(vars.testData[1], done, wishListCheckSuccess);
+  it("Update Item", async function() {
+    let item = vars.testData[0].categories[0].items[0];
+    item.name += " (updated)";
+    await postItem(item, itemCheckSuccess);
   });
 
-  it("Update Wishlist 1", function(done) {
-    vars.testData[0].name += " (updated)";
-    postWishList(vars.testData[0], done, wishListCheckSuccess);
+  it("Update Item with wrong id", async function() {
+    await postItem(
+      { ...vars.testData[0].categories[0].items[0], _id: "000000b72833550fb8932f16" },
+      checkFailed
+    );
   });
 
-  it("Update Wishlist with wrong id", function(done) {
-    postWishList({ ...vars.testData[0], _id: "000000b72833550fb8932f16" }, done, checkFailed);
+  it("Update Item with empty checked", async function() {
+    await postItem({ ...vars.testData[0].categories[0].items[0], checked: undefined }, checkFailed);
   });
 
-  it("Update Wishlist with empty name", function(done) {
-    postWishList({ ...vars.testData[0], name: "" }, done, checkFailed);
+  it("Update Item with empty important", async function() {
+    await postItem(
+      { ...vars.testData[0].categories[0].items[0], important: undefined },
+      checkFailed
+    );
   });
 
-  it("Create Category 1", function(done) {
-    postCategory(vars.testData[0].categories[0], done, categoryCheckSuccess);
-  });
-
-  it("Create Category 2", function(done) {
-    postCategory(vars.testData[0].categories[1], done, categoryCheckSuccess);
-  });
-
-  it("Get all Wishlists", function(done) {
-    chai
+  it("Get list of Wishlists", async function() {
+    let res = await chai
       .request(server)
       .get("/wishlist")
-      .set("Cookie", vars.cookie)
-      .end((err, res) => {
-        should.not.exist(err);
-        res.should.have.status(200);
-        let wishlists = res.body;
-        should.exist(wishlists);
-        wishlists.should.be.an("array");
-        wishlists.length.should.be.eql(2);
-        wishlists.map(wl1 => {
-          let wls = vars.testData.filter(wl => wl._id === wl1._id);
-          wls.length.should.be.eql(1);
-          compareWishLists(wl1, wls[0]).should.be.eql(true);
-        });
-        done();
-      });
+      .set("Cookie", vars.cookie);
+
+    res.should.have.status(200);
+    let wishlists = res.body;
+    should.exist(wishlists);
+    wishlists.should.be.an("array");
+    wishlists.length.should.be.eql(vars.testData.length);
+
+    wishlists.forEach(wl1 => {
+      let wls = vars.testData.filter(wl => wl._id === wl1._id);
+      wls.length.should.be.eql(1);
+      compareWishLists(wl1, wls[0]).should.be.eql(true);
+    });
   });
 
-  it("Delete Category 1", function(done) {
-    deleteData(`/category/${vars.testData[0].categories[0]._id}`, done, checkSuccess);
+  it("Compare all Wishlists", async function() {
+    let results = await Promise.all(
+      vars.testData.map(wl => {
+        return chai
+          .request(server)
+          .get(`/wishlist/${wl._id}`)
+          .set("Cookie", vars.cookie);
+      })
+    );
+
+    results.forEach(res => {
+      res.should.have.status(200);
+      let { body: wishlists } = res;
+      wishlists.should.be.an("array");
+      wishlists.length.should.be.eql(1);
+
+      let wls = vars.testData.filter(w => w._id === wishlists[0]._id);
+      wls.length.should.be.eql(1);
+      compareWishLists(wishlists[0], wls[0], true).should.be.eql(true);
+    });
   });
 
-  it("Delete Category with wrong id", function(done) {
-    deleteData(`/category/5b0d44bde3d7191b2c9c0000`, done, checkFailed);
+  it("Delete Item", async function() {
+    await deleteData(`/item/${vars.testData[0].categories[0].items[0]._id}`, checkSuccess);
   });
 
-  it("Delete Wishlist 1", function(done) {
-    deleteData(`/wishlist/${vars.testData[0]._id}`, done, checkSuccess);
+  it("Delete Item with wrong id", async function() {
+    await deleteData(`/item/5b0d44bde3d7191b2c9c0000`, checkFailed);
   });
 
-  it("Delete Wishlist 2", function(done) {
-    deleteData(`/wishlist/${vars.testData[1]._id}`, done, checkSuccess);
+  it("Delete Category", async function() {
+    await deleteData(`/category/${vars.testData[0].categories[0]._id}`, checkSuccess);
   });
 
-  it("Delete Wishlist with wrong id", function(done) {
-    deleteData(`/wishlist/5b0d44bde3d7191b2c9c0000`, done, checkFailed);
+  it("Delete Category with wrong id", async function() {
+    await deleteData(`/category/5b0d44bde3d7191b2c9c0000`, checkFailed);
+  });
+
+  it("Delete Wishlists", async function() {
+    await Promise.all(vars.testData.map(wl => deleteData(`/wishlist/${wl._id}`, checkSuccess)));
   });
 });
 
@@ -117,11 +173,11 @@ function compareWishLists(wl1, wl2, deep) {
     if (!compareCategories(c1, cats[0])) return true;
   });
 
-  return failed;
+  return !failed;
 }
 
 function compareCategories(c1, c2) {
-  if (c1._id !== c2._id || c1.name !== c2.name || c1.name !== c2.sort) return false;
+  if (c1._id !== c2._id || c1.name !== c2.name || c1.sort !== c2.sort) return false;
 
   if (!c1.items && !c2.items) return true;
   if ((!c1.items && c2.items) || (c1.items && !c2.items)) return false;
@@ -134,81 +190,110 @@ function compareCategories(c1, c2) {
     if (!compareItems(i1, items[0])) return true;
   });
 
-  return failed;
+  return !failed;
 }
 
 function compareItems(i1, i2) {
   return (
     i1._id === i2._id &&
+    i1.name === i2.name &&
     i1.quantity === i2.quantity &&
     i1.checked === i2.checked &&
     i1.important === i2.important
   );
 }
 
-function wishListCheckSuccess(wishList, err, res, done) {
-  should.not.exist(err);
+function wishListCheckSuccess(wishList, res) {
+  if (res.status !== 200) console.log(res.body);
   res.should.have.status(200);
   let wl = res.body;
   should.exist(wl);
   wl.should.have.property("name").eql(wishList.name);
   wl.should.have.property("_id");
   wishList._id = wl._id;
-  wishList.categories.map(cat => {
+  wishList.categories.forEach(cat => {
     cat.wishlist = wl._id;
-    cat.items.map(i => (i.wishlist = wl._id));
+    cat.items.forEach(i => (i.wishlist = wl._id));
   });
-  done();
 }
 
-function categoryCheckSuccess(category, err, res, done) {
-  should.not.exist(err);
+function categoryCheckSuccess(category, res) {
+  if (res.status !== 200) console.log(res.body);
   res.should.have.status(200);
   let cat = res.body;
   should.exist(cat);
+  cat.should.have.property("wishlist").eql(category.wishlist);
   cat.should.have.property("name").eql(category.name);
   cat.should.have.property("sort").eql(category.sort);
   cat.should.have.property("_id");
   category._id = cat._id;
-  category.items.map(i => (i.category = category._id));
-  done();
+  category.items.forEach(i => (i.category = category._id));
 }
 
-function checkFailed(o, err, res, done) {
-  should.not.exist(err);
+function itemCheckSuccess(item, res) {
+  if (res.status !== 200) console.log(res.body);
+  res.should.have.status(200);
+  let i = res.body;
+  should.exist(i);
+  i.should.have.property("wishlist").eql(item.wishlist);
+  i.should.have.property("category").eql(item.category);
+  i.should.have.property("name").eql(item.name);
+  i.should.have.property("quantity").eql(item.quantity);
+  i.should.have.property("checked").eql(item.checked);
+  i.should.have.property("important").eql(item.important);
+  i.should.have.property("_id");
+  item._id = i._id;
+}
+
+function checkFailed(o, res) {
   res.should.have.status(400);
   let { error } = res.body;
   should.exist(error);
   error.should.have.property("status").eql(400);
   error.should.have.property("message");
-  done();
 }
 
-function checkSuccess(o, err, res, done) {
-  should.not.exist(err);
+function checkSuccess(o, res) {
+  if (res.status !== 200) console.log(res.body);
   res.should.have.status(200);
   let result = res.body;
   should.exist(result);
   result.should.have.property("success").eql(true);
-  done();
 }
 
-function postWishList(wishList, done, resultChecker) {
-  chai
+async function postItem(item, resultChecker) {
+  let res = await chai
+    .request(server)
+    .post("/item")
+    .set("Cookie", vars.cookie)
+    .send({
+      _id: item._id,
+      wishlist: item.wishlist,
+      category: item.category,
+      name: item.name,
+      quantity: item.quantity,
+      checked: item.checked,
+      important: item.important
+    });
+
+  resultChecker(item, res);
+}
+
+async function postWishList(wishList, resultChecker) {
+  let res = await chai
     .request(server)
     .post("/wishlist")
     .set("Cookie", vars.cookie)
     .send({
       _id: wishList._id,
       name: wishList.name
-    })
-    .end((err, res) => {
-      resultChecker(wishList, err, res, done);
     });
+
+  resultChecker(wishList, res);
 }
 
-function postCategory(category, done, resultChecker) {
-  chai
+async function postCategory(category, resultChecker) {
+  let res = await chai
     .request(server)
     .post("/category")
     .set("Cookie", vars.cookie)
@@ -217,18 +302,15 @@ function postCategory(category, done, resultChecker) {
       wishlist: category.wishlist,
       name: category.name,
       sort: category.sort
-    })
-    .end((err, res) => {
-      resultChecker(category, err, res, done);
     });
+
+  resultChecker(category, res);
 }
 
-function deleteData(url, done, resultChecker) {
-  chai
+async function deleteData(url, resultChecker) {
+  let res = await chai
     .request(server)
     .delete(url)
-    .set("Cookie", vars.cookie)
-    .end((err, res) => {
-      resultChecker(null, err, res, done);
-    });
+    .set("Cookie", vars.cookie);
+  resultChecker(null, res);
 }
